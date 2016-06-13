@@ -45,3 +45,7 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+KeyczarTest/.gradle/
+KeyczarTest/.idea/
+KeyczarTest/build/
+KeyczarTest/KeyczarTest.iml
