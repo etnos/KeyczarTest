@@ -1,5 +1,11 @@
-package com.example.illiaklimov.keyczartest;
+package com.example.illiaklimov.keyczartest.KeyUtil;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.util.Log;
+
+import org.keyczar.Crypter;
 import org.keyczar.DefaultKeyType;
 import org.keyczar.Encrypter;
 import org.keyczar.GenericKeyczar;
@@ -16,6 +22,16 @@ import org.keyczar.interfaces.KeyczarReader;
 import org.keyczar.keyparams.RsaKeyParameters;
 import org.keyczar.util.Base64Coder;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -73,24 +89,70 @@ public final class Util {
         return readerFromKeyczar(createKey(type, purpose, size));
     }
 
-//    /**
-//     * Writes input to a JSON file at path.
-//     */
-//    public static void writeJsonToPath(GenericKeyczar input, String path) {
-//        try {
-//            FileOutputStream output = new FileOutputStream(path);
-//            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, "UTF-8"));
-//            JsonWriter.write(input, writer);
-//            writer.close();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    public static Crypter crypterFromJson(String json) throws KeyczarException {
-//        KeyczarReader key = new KeyczarJsonReader(json);
-//        return new Crypter(key);
-//    }
+    /**
+     * Writes input to a JSON file at path.
+     */
+    public static void writeJsonToFile(GenericKeyczar input, File file) {
+        try {
+
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+
+            FileOutputStream output = new FileOutputStream(file);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, "UTF-8"));
+            JsonWriter.write(input, writer);
+            writer.close();
+        } catch (IOException e) {
+            Log.e("Util", "can not save key to file", e);
+        }
+    }
+
+    @Nullable
+    public static Crypter crypterFromFile(@NonNull File file) {
+        String json = fileToString(file);
+        if (TextUtils.isEmpty(json)) {
+            return null;
+        }
+        Crypter crypter = null;
+        try {
+            crypter = crypterFromJson(json);
+        } catch (KeyczarException e) {
+            Log.e("Util", "Can not create crypter ", e);
+        }
+        return crypter;
+    }
+
+    private static String fileToString(File file) {
+
+        String ret = "";
+
+        try {
+            InputStream inputStream = new FileInputStream(file);
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            String receiveString = "";
+            StringBuilder stringBuilder = new StringBuilder();
+
+            while ((receiveString = bufferedReader.readLine()) != null) {
+                stringBuilder.append(receiveString);
+            }
+
+            inputStream.close();
+            ret = stringBuilder.toString();
+        } catch (FileNotFoundException e) {
+            Log.e("Util", "File not found: ", e);
+        } catch (IOException e) {
+            Log.e("Util", "Can not read file: ", e);
+        }
+
+        return ret;
+    }
+
+    public static Crypter crypterFromJson(String json) throws KeyczarException {
+        KeyczarReader key = new KeyczarJsonReader(json);
+        return new Crypter(key);
+    }
 
     /**
      * Encrypts plaintext with a new session key, which is encrypted using crypter. The encrypted session
@@ -113,7 +175,6 @@ public final class Util {
 //        SessionCrypter session = new SessionCrypter(crypter, unpacked[0]);
 //        return session.decrypt(unpacked[1]);
 //    }
-
     public static String encryptWithSession(Encrypter crypter, String plaintext) throws KeyczarException {
         try {
             return Base64Coder.encodeWebSafe(encryptWithSession(crypter, plaintext.getBytes("UTF-8")));
