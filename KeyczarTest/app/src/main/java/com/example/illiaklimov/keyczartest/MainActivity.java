@@ -87,32 +87,33 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "No Crypto generated", Toast.LENGTH_LONG).show();
             return;
         }
-        InputStream inStream = getResources().openRawResource(R.raw.image);
-        try {
-            final byte[] music = new byte[inStream.available()];
+        int size = 10 * 1024 * 1024;
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        long l = System.currentTimeMillis();
-                        byte[] encrypt = crypter.encrypt(music);
-                        crypter.decrypt(encrypt);
-                        final long l1 = System.currentTimeMillis() - l;
-                        MainActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                txtBig.setText("Duration (ms) " + l1);
-                            }
-                        });
-                    } catch (KeyczarException e) {
-                        Log.e(TAG, "no encryption", e);
-                    }
-                }
-            }).start();
-        } catch (IOException e) {
-            Log.e(TAG, "no encryption", e);
+        final byte[] data = new byte[size];
+
+        for (int i = 0; i < size; i++) {
+            data[i] = (byte) i;
         }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    long l = System.currentTimeMillis();
+                    byte[] encrypt = crypter.encrypt(data);
+                    crypter.decrypt(encrypt);
+                    final long l1 = System.currentTimeMillis() - l;
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            txtBig.setText("Duration (ms) " + l1);
+                        }
+                    });
+                } catch (KeyczarException e) {
+                    Log.e(TAG, "no encryption", e);
+                }
+            }
+        }).start();
 
     }
 
